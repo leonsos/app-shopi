@@ -32,3 +32,30 @@ model Session {
   refreshToken        String?
   refreshTokenExpires DateTime?
 }
+
+model Affiliate {
+  id                   String       @id @default(uuid())
+  shop                 String
+  affiliateIdentifier  String       // El ID único ej: TIENDASMART
+  commissionPercentage Float        // Porcentaje a pagar al afiliado
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+
+  conversions          Conversion[]
+
+  @@unique([shop, affiliateIdentifier]) // Un identificador debe ser único por tienda
+}
+
+model Conversion {
+  id                  String    @id @default(uuid())
+  shop                String
+  affiliateId         String
+  orderId             String    // ID de la orden en Shopify (GID)
+  orderTotal          Float
+  commissionApp       Float     // El 5% cobrado por uso
+  commissionAffiliate Float     // Lo que gana el afiliado
+  usageRecordId       String?   // ID del cobro en Shopify (para trazabilidad)
+  createdAt           DateTime  @default(now())
+
+  affiliate           Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+}
