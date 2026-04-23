@@ -3,6 +3,7 @@ import {
   ApiVersion,
   AppDistribution,
   shopifyApp,
+  BillingInterval,
 } from "@shopify/shopify-app-react-router/server";
 import { PrismaSessionStorage } from "@shopify/shopify-app-session-storage-prisma";
 import prisma from "./db.server";
@@ -16,6 +17,14 @@ const shopify = shopifyApp({
   authPathPrefix: "/auth",
   sessionStorage: new PrismaSessionStorage(prisma),
   distribution: AppDistribution.AppStore,
+  billing: {
+    "Comisión por Venta": {
+      amount: 0,
+      currencyCode: "USD",
+      interval: BillingInterval.Usage,
+      usageTerms: "5% de comisión sobre cada venta referida por un afiliado.",
+    },
+  },
   future: {
     expiringOfflineAccessTokens: true,
   },
