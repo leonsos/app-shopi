@@ -1,53 +1,72 @@
-import { json, type ActionFunctionArgs } from "react-router";
+import { type ActionFunctionArgs } from "react-router";
 import prisma from "../db.server";
 import { unauthenticated } from "../shopify.server";
 
+export const loader = async ({ request }: ActionFunctionArgs) => {
+  const corsHeaders = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  };
+
+  if (request.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: corsHeaders });
+  }
+  
+  return new Response("Not Found", { status: 404, headers: corsHeaders });
+};
+
 export const action = async ({ request }: ActionFunctionArgs) => {
+  const corsHeaders = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  };
+
   // CORS: Permitir llamadas desde la tienda de Shopify
   if (request.method === "OPTIONS") {
-    return new Response(null, {
-      status: 204,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
-      },
-    });
+    return new Response(null, { status: 204, headers: corsHeaders });
   }
 
   if (request.method !== "POST") {
-    return json({ error: "Method not allowed" }, { status: 405 });
+    return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: corsHeaders });
   }
 
   try {
     const body = await request.json();
+    console.log("\n--- [TRACK API] NUEVA VENTA RECIBIDA ---");
+    console.log("Payload:", body);
+
     const { shop, affiliateIdentifier, orderId, orderTotal } = body;
 
     if (!shop || !affiliateIdentifier || !orderId || orderTotal == null) {
-      return json({ error: "Faltan campos obligatorios" }, { status: 400 });
+      console.log("[TRACK API] Error: Faltan campos obligatorios");
+      return new Response(JSON.stringify({ error: "Faltan campos obligatorios" }), { status: 400, headers: corsHeaders });
     }
 
-    // 1. Buscar al afiliado
-    const affiliate = await prisma.affiliate.findUnique({
+    // 1. Buscar al afiliado (Búsqueda más flexible con contains por si el dominio varía)
+    const affiliate = await prisma.affiliate.findFirst({
       where: {
-        shop_affiliateIdentifier: {
-          shop,
-          affiliateIdentifier,
-        },
+        shop: { contains: shop.replace('.myshopify.com', '') },
+        affiliateIdentifier,
       },
     });
 
     if (!affiliate) {
-      return json({ error: "Afiliado no encontrado" }, { status: 404 });
+      console.log("[TRACK API] Error: Afiliado no encontrado para shop:", shop);
+      return new Response(JSON.stringify({ error: "Afiliado no encontrado" }), { status: 404, headers: corsHeaders });
     }
+
+    console.log("[TRACK API] Afiliado encontrado:", affiliate.id);
 
     // 2. Comprobar si ya procesamos esta orden (idempotencia)
     const existingConversion = await prisma.conversion.findFirst({
-      where: { shop, orderId },
+      where: { shop: affiliate.shop, orderId },
     });
 
     if (existingConversion) {
-      return json({ message: "La orden ya fue procesada anteriormente" });
+      console.log("[TRACK API] La orden ya fue procesada");
+      return new Response(JSON.stringify({ message: "La orden ya fue procesada anteriormente" }), { status: 200, headers: corsHeaders });
     }
 
     // 3. Calcular comisiones
@@ -149,15 +168,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       },
     });
 
-    return json({ 
-      success: true, 
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-      }
-    });
+    return new Response(JSON.stringify({ success: true }), { status: 200, headers: corsHeaders });
 
   } catch (error) {
     console.error("Webhook/API processing error:", error);
-    return json({ error: "Internal server error" }, { status: 500 });
+    return new Response(JSON.stringify({ error: "Internal server error" }), { status: 500, headers: corsHeaders });
   }
 };
