@@ -1,5 +1,5 @@
 import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
-import { useLoaderData } from "react-router";
+import { useLoaderData, Link } from "react-router";
 import { authenticate } from "../shopify.server";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import prisma from "../db.server";
@@ -162,9 +162,11 @@ export default function Index() {
         </div>
 
         <s-stack direction="inline" gap="base">
-          <s-button variant="primary" url="/app/affiliates">
-            Gestionar Afiliados
-          </s-button>
+          <Link to="/app/affiliates" style={{ textDecoration: 'none' }}>
+            <s-button variant="primary">
+              Gestionar Afiliados
+            </s-button>
+          </Link>
         </s-stack>
       </s-section>
     </s-page>

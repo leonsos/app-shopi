@@ -19,7 +19,7 @@ const shopify = shopifyApp({
   distribution: AppDistribution.AppStore,
   billing: {
     "Comisión por Venta": {
-      amount: 0,
+      amount: 100,
       currencyCode: "USD",
       interval: BillingInterval.Usage,
       usageTerms: "5% de comisión sobre cada venta referida por un afiliado.",

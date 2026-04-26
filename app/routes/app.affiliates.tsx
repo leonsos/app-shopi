@@ -13,18 +13,31 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   return { affiliates };
 };
 
+import { z } from "zod";
+
+const CreateAffiliateSchema = z.object({
+  affiliateIdentifier: z.string().min(3).trim(),
+  commissionPercentage: z.coerce.number().positive(),
+});
+
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const formData = await request.formData();
   const intent = formData.get("intent");
 
   if (intent === "create") {
-    const affiliateIdentifier = formData.get("affiliateIdentifier")?.toString().trim();
-    const commissionPercentage = parseFloat(formData.get("commissionPercentage")?.toString() || "0");
+    const data = {
+      affiliateIdentifier: formData.get("affiliateIdentifier"),
+      commissionPercentage: formData.get("commissionPercentage"),
+    };
 
-    if (!affiliateIdentifier || isNaN(commissionPercentage) || commissionPercentage <= 0) {
-      return { error: "Datos inválidos" };
+    const result = CreateAffiliateSchema.safeParse(data);
+
+    if (!result.success) {
+      return { error: "Datos inválidos o incompletos" };
     }
+
+    const { affiliateIdentifier, commissionPercentage } = result.data;
 
     try {
       await prisma.affiliate.create({
