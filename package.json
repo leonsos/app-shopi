@@ -42,9 +42,9 @@
   },
   "devDependencies": {
     "@shopify/api-codegen-preset": "^1.2.0",
-    "@shopify/app": "^3.94.1",
-    "@shopify/cli": "^3.94.1",
-    "@shopify/plugin-cloudflare": "^3.94.1",
+    "@shopify/app": "^3.93.2",
+    "@shopify/cli": "^3.93.2",
+    "@shopify/plugin-cloudflare": "^3.93.2",
     "@shopify/polaris-types": "^1.0.1",
     "@types/eslint": "^9.6.1",
     "@types/node": "^22.18.8",
